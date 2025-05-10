@@ -1,0 +1,2 @@
+#!/bin/zsh
+cargo watch -c -q -w tests/ -x "test --package this-axum --test ${1} -- quick_dev --exact ${1} --nocapture"
