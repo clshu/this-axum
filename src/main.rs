@@ -2,16 +2,16 @@
 
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
-use axum::routing::get;
+use axum::routing::{get, get_service};
 use axum::{Router, response::Html};
 use serde::Deserialize;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/hello", get(hadler_hello))
-        .route("/hello2/{name}", get(hamdler_hello2));
-
+        .merge(routes_hello())
+        .fallback_service(get_service(ServeDir::new("./")));
     // region:    --- Start Server
 
     // run our app with hyper, listening globally on port 8080
@@ -20,6 +20,25 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
     // endregion: --- Start Server
 }
+
+/*
+In Axum 0.7+, you cannot use .nest_service("/", ...) because nesting at the root path is no longer supported.
+Instead, you must use .fallback_service(...).
+ */
+
+// fn routes_static() -> Router {
+//     Router::new().nest_service("/", get_service(ServeDir::new("./")))
+// }
+
+// region:    --- Routes Hello
+fn routes_hello() -> Router {
+    Router::new()
+        .route("/hello", get(hadler_hello))
+        // e.g. /hello2/Mike. Don't use /hello2/:name anymore
+        .route("/hello2/{name}", get(hamdler_hello2))
+}
+
+// endregion: --- Routes Hello
 
 // region:    --- Handlers Hello
 #[derive(Debug, Deserialize)]
