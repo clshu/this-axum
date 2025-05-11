@@ -1,3 +1,4 @@
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 
 pub type Result<T> = core::result::Result<T, Error>;

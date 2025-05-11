@@ -3,18 +3,22 @@
 pub use self::error::{Error, Result};
 
 use axum::extract::{Path, Query};
-use axum::response::IntoResponse;
+use axum::middleware;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, get_service};
 use axum::{Router, response::Html};
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
 mod error;
+mod web;
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
         .merge(routes_hello())
+        .merge(web::routes_login::routes())
+        .layer(middleware::map_response(main_response_mapper))
         .fallback_service(get_service(ServeDir::new("./")));
     // region:    --- Start Server
 
@@ -25,6 +29,13 @@ async fn main() {
     // endregion: --- Start Server
 }
 
+async fn main_response_mapper(res: Response) -> Response {
+    println!("->> {:<12} - main_response_mapper", "RES_MAPPER");
+
+    println!();
+
+    res
+}
 /*
 In Axum 0.7+, you cannot use .nest_service("/", ...) because nesting at the root path is no longer supported.
 Instead, you must use .fallback_service(...).
