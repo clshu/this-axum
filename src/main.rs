@@ -1,5 +1,6 @@
 #![allow(unused)]
 // Re-export error module
+pub use self::config::Config;
 pub use self::error::{Error, Result};
 
 use axum::extract::{Path, Query};
@@ -8,17 +9,28 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, get_service};
 use axum::{Router, response::Html};
 use serde::Deserialize;
+use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
+mod config;
+mod db;
 mod error;
+mod model;
 mod web;
 
 #[tokio::main]
 async fn main() {
+    let config = config::Config::new();
+    let connection_status = db::connection::connect(config.clone()).await;
+    if connection_status.is_err() {
+        panic!("Failed to connect to MongoDB");
+    }
+    // println!("->> {:<12} - config: {config:?}", "CONFIG");
     let app = Router::new()
         .merge(routes_hello())
         .merge(web::routes_login::routes())
         .layer(middleware::map_response(main_response_mapper))
+        .layer(CookieManagerLayer::new())
         .fallback_service(get_service(ServeDir::new("./")));
     // region:    --- Start Server
 
